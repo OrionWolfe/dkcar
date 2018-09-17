@@ -111,7 +111,7 @@ class Simple(Chain):
 
 
     def get_loss_func(self):
-        def lf(X, Y):
+        def lf(X, old_X, old_Y, Y):
             # Now, X[n] is a tuple of (where n being a batch index):
             # X[n][0] image: current image
             # X[n][1] prev_image: previous image
@@ -119,8 +119,11 @@ class Simple(Chain):
 
             # Currently, we only use X[n][0].
             # Conver to a batch of current images, of type ndarray
-            X = np.array(list(map(lambda x: x[0], X)))
-            A = self(X)
+            n,ch,h,w = X.shape
+            n,n_out = old_Y.shape
+            old_Y = self.xp.broadcast_to(self.xp.reshape(old_Y,(n,n_out,1,1)),(n,n_out,h,w))
+            Z = self.xp.concatenate((X,old_X,old_Y),1)
+            A = self(Z)
             loss = F.mean_squared_error(A, Y.astype(np.float32))
             chainer.report({'loss': loss}, observer=self)
             return loss
