@@ -59,8 +59,6 @@ def load_data(paths, mask=None):
 
         images = []
         labels = []
-        prev_image = None
-        prev_label = None
 
         for file_name in files:
             with open(file_name) as f:
@@ -74,12 +72,14 @@ def load_data(paths, mask=None):
                     except:
                         print("Error when processing image file at", image_path)
                         raise
-                images.append((img, prev_image, prev_label))
-                prev_image = img;
-                prev_label = (data['user/angle'], data['user/throttle'])
-                labels.append(prev_label)
+                label = np.array((data['user/angle'], data['user/throttle']),np.float32)
+                images.append(img)
+                labels.append(label)
 
-        datasets.append(tuple_dataset.TupleDataset(images, labels))
+        datasets.append(tuple_dataset.TupleDataset(images[1:],#current image
+                                                   images[:-1],#past image
+                                                   labels[:-1],#past label
+                                                   labels[1:]))#current label
 
     return ConcatenatedDataset(*datasets)
 
